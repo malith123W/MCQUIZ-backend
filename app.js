@@ -18,14 +18,11 @@ app.use(
 app.use(express.json());
 
 
-app.get('/register',(req,res)=> {
+app.post('/register',(req,res)=> {
     controller.registerUser((req,res,next)=>{
         res.send();
     });
 });
-
-
-
 
 
 

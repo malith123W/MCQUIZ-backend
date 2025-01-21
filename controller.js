@@ -45,11 +45,6 @@ const registerUser = async (req, res) => {
 };
 
 
-
-
-
-exports.registerUser = registerUser;
-
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -99,4 +94,5 @@ const loginUser = async (req, res) => {
   }
 };
 exports.loginUser = loginUser;
+exports.registerUser = registerUser;
 
