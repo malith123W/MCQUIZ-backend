@@ -30,3 +30,9 @@ app.get('/register',(req,res)=> {
 
 
 module.exports = app;
+
+app.post('/login',(req,res)=> {
+    controller.registerUser((req,res,next)=>{
+        res.send();
+    });
+});
