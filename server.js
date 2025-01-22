@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');
+const User = require('./model'); // Import the user model
 const router = require('./router'); // Existing routes
 require('dotenv').config();
 
@@ -35,7 +36,7 @@ const uri =
 
 const connect = async () => {
   try {
-    await mongoose.connect(uri); // Deprecated options removed
+    await mongoose.connect(uri);
     console.log('Connected to MongoDB');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
@@ -44,10 +45,9 @@ const connect = async () => {
 connect();
 
 // Google OAuth Configuration
-const CLIENT_ID = process.env.CLIENT_ID; 
-const CLIENT_SECRET = process.env.CLIENT_SECRET ;
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const FRONTEND_URL = 'http://localhost:3000';
-const BACKEND_URL = `http://localhost:3001`;
 
 passport.use(
   new GoogleStrategy(
@@ -58,9 +58,28 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Add logic to save or update the user in the database
-        console.log('User authenticated:', profile);
-        done(null, profile);
+        // Check if a user with the same email already exists
+        let user = await User.findOne({ email: profile.emails[0].value });
+
+        if (user) {
+          // If user exists but has no googleId, update the user
+          if (!user.googleId) {
+            user.googleId = profile.id;
+            user.firstName = profile.name.givenName;
+            user.lastName = profile.name.familyName;
+            await user.save();
+          }
+        } else {
+          // If user does not exist, create a new one
+          user = new User({
+            googleId: profile.id,
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+            email: profile.emails[0].value,
+          });
+          await user.save();
+        }
+        done(null, user);
       } catch (error) {
         done(error, null);
       }
@@ -69,11 +88,16 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
-  done(null, user);
+  done(null, user.id);
 });
 
-passport.deserializeUser((user, done) => {
-  done(null, user);
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
 });
 
 // Google OAuth Routes
