@@ -44,8 +44,8 @@ const connect = async () => {
 connect();
 
 // Google OAuth Configuration
-const CLIENT_ID = process.env.CLIENT_ID || '160612889115-rlor38j7ah38u2rm1dn6g4em2uercgvf.apps.googleusercontent.com';
-const CLIENT_SECRET = process.env.CLIENT_SECRET || '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';
+const CLIENT_ID = process.env.CLIENT_ID; 
+const CLIENT_SECRET = process.env.CLIENT_SECRET ;
 const FRONTEND_URL = 'http://localhost:3000';
 const BACKEND_URL = `http://localhost:3001`;
 
