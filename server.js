@@ -4,65 +4,73 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');
-const User = require('./model'); // Import the user model
-const router = require('./router'); // Existing routes
+const User = require('./models/model');
+const router = require('./routes/router');
+const adminRouter = require('./routes/adminRouter');
 require('dotenv').config();
 
 const app = express();
-const port = 3001;
-const host = 'localhost';
+const port = process.env.PORT || 3001;
+const host = process.env.HOST || 'localhost';
 
 // Middleware
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
   })
 );
 app.use(express.json());
 app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+app.use(
   session({
-    secret: 'mcquiz-secret',
+    secret: process.env.JWT_SECRET || 'mcquiz-secret',
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+    }
   })
 );
 app.use(passport.initialize());
 app.use(passport.session());
 
 // MongoDB Connection
-const uri =
-  'mongodb+srv://mcquizproject:MCQUIZ1234@cluster0.mwf2w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-
+const uri = process.env.MONGODB_URI;
 const connect = async () => {
   try {
-    await mongoose.connect(uri);
+    await mongoose.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log('Connected to MongoDB');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
+    process.exit(1);
   }
 };
 connect();
 
-// Google OAuth Configuration
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const FRONTEND_URL = 'http://localhost:3000';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: CLIENT_ID,
       clientSecret: CLIENT_SECRET,
-      callbackURL: 'http://localhost:3001/auth/google/callback',
+      callbackURL: `http://${host}:${port}/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Check if a user with the same email already exists
         let user = await User.findOne({ email: profile.emails[0].value });
-
         if (user) {
-          // If user exists but has no googleId, update the user
           if (!user.googleId) {
             user.googleId = profile.id;
             user.firstName = profile.name.givenName;
@@ -70,12 +78,12 @@ passport.use(
             await user.save();
           }
         } else {
-          // If user does not exist, create a new one
           user = new User({
             googleId: profile.id,
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value,
+            role: 'user'
           });
           await user.save();
         }
@@ -100,7 +108,6 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-// Google OAuth Routes
 app.get(
   '/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
@@ -110,8 +117,7 @@ app.get(
   '/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    // Successful login
-    res.redirect(FRONTEND_URL); // Redirect to frontend after successful login
+    res.redirect(FRONTEND_URL);
   }
 );
 
@@ -128,10 +134,23 @@ app.get('/auth/user', (req, res) => {
   res.json(req.user || null);
 });
 
-// Custom Router
 app.use('/api', router);
+app.use('/api/admin', adminRouter);
 
-// Start the server
+app.use((req, res, next) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    message: 'Server error',
+    error: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message
+  });
+});
+
 const server = app.listen(port, host, () => {
   console.log(`Node server is listening on http://${host}:${server.address().port}`);
 });
+
+module.exports = app;
