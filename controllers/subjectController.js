@@ -183,48 +183,7 @@ const deleteSubject = async (req, res) => {
   }
 };
 
-const getSubjectStats = async (req, res) => {
-  try {
-    const levelStats = await Subject.aggregate([
-      {
-        $group: {
-          _id: '$level',
-          count: { $sum: 1 },
-          totalQuizzes: { $sum: '$quizCount' }
-        }
-      },
-      {
-        $sort: { _id: 1 }
-      }
-    ]);
-    
-    const totalSubjects = await Subject.countDocuments();
-    
-    const quizStats = await Subject.aggregate([
-      {
-        $group: {
-          _id: null,
-          totalQuizzes: { $sum: '$quizCount' }
-        }
-      }
-    ]);
-    
-    const totalQuizzes = quizStats.length > 0 ? quizStats[0].totalQuizzes : 0;
-    
-    res.status(200).json({
-      totalSubjects,
-      totalQuizzes,
-      byLevel: levelStats.map(stat => ({
-        level: stat._id,
-        subjectCount: stat.count,
-        quizCount: stat.totalQuizzes
-      }))
-    });
-  } catch (error) {
-    console.error('Get subject stats error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
+
 
 module.exports = {
   createSubject,
