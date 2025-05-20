@@ -157,7 +157,30 @@ const updateSubject = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
+const deleteSubject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const subject = await Subject.findById(id);
+    
+    if (!subject) {
+      return res.status(404).json({ message: 'Subject not found' });
+    }
+    
+    if (subject.quizCount > 0) {
+      return res.status(400).json({ 
+        message: 'Cannot delete subject with associated quizzes. Remove the quizzes first or deactivate the subject instead.' 
+      });
+    }
+    
+    await Subject.findByIdAndDelete(id);
+    
+    res.status(200).json({ message: 'Subject deleted successfully' });
+  } catch (error) {
+    console.error('Delete subject error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 const getSubjectStats = async (req, res) => {
   try {
