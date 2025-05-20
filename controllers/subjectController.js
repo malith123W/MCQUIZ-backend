@@ -83,7 +83,23 @@ const getAllSubjects = async (req, res) => {
   }
 };
 
-
+const getSubjectsByLevel = async (req, res) => {
+  try {
+    const { level } = req.params;
+    
+    const validLevels = ['School Pro', 'O/L Pro', 'A/L'];
+    if (!validLevels.includes(level)) {
+      return res.status(400).json({ message: 'Invalid level. Must be School Pro, O/L Pro, or A/L' });
+    }
+    
+    const subjects = await Subject.find({ level }).sort({ name: 1 });
+    
+    res.status(200).json({ subjects });
+  } catch (error) {
+    console.error('Get subjects by level error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 const getSubjectById = async (req, res) => {
   try {
