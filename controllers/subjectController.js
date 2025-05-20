@@ -101,7 +101,22 @@ const getSubjectsByLevel = async (req, res) => {
   }
 };
 
-
+const getSubjectById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const subject = await Subject.findById(id);
+    
+    if (!subject) {
+      return res.status(404).json({ message: 'Subject not found' });
+    }
+    
+    res.status(200).json({ subject });
+  } catch (error) {
+    console.error('Get subject by ID error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 const updateSubject = async (req, res) => {
   try {
