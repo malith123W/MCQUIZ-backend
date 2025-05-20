@@ -182,6 +182,20 @@ const deleteSubject = async (req, res) => {
   }
 };
 
+const getSubjectStats = async (req, res) => {
+  try {
+    const levelStats = await Subject.aggregate([
+      {
+        $group: {
+          _id: '$level',
+          count: { $sum: 1 },
+          totalQuizzes: { $sum: '$quizCount' }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ]);
     
     const totalSubjects = await Subject.countDocuments();
     
