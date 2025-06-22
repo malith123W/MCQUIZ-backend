@@ -11,6 +11,7 @@ const paymentRouter = require('./routes/paymentRouter');
 const subjectRouter = require('./routes/subjectRoutes');
 const userSubjectRouter = require('./routes/userSubjectRoutes');
 const userQuizRouter = require('./routes/userQuizRoutes');
+const userAttemptRouter = require('./routes/userAttemptRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -142,7 +143,34 @@ app.use('/api/admin', adminRouter);
 app.use('/api/admin/subjects', subjectRouter);
 app.use('/api/subjects', userSubjectRouter);
 app.use('/api/payment', paymentRouter);
-app.use('/api/quizzes', userQuizRouter);
+app.use('/api/user-quizzes', userQuizRouter);
+app.use('/api/user-attempts', userAttemptRouter);
+
+// Test endpoint to check database
+app.get('/api/test/database', async (req, res) => {
+  try {
+    const Subject = require('./models/subjectModel');
+    const Quiz = require('./models/quizModel');
+    
+    const subjects = await Subject.find({ isActive: true });
+    const quizzes = await Quiz.find({ isActive: true });
+    
+    res.json({
+      message: 'Database test successful',
+      subjects: {
+        count: subjects.length,
+        data: subjects.map(s => ({ id: s._id, name: s.name, level: s.level }))
+      },
+      quizzes: {
+        count: quizzes.length,
+        data: quizzes.map(q => ({ id: q._id, title: q.title, subject: q.subject }))
+      }
+    });
+  } catch (error) {
+    console.error('Database test error:', error);
+    res.status(500).json({ message: 'Database test failed', error: error.message });
+  }
+});
 
 app.use((req, res, next) => {
   res.status(404).json({ message: 'Route not found' });

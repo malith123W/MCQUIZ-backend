@@ -2,6 +2,8 @@ const express = require('express');
 const userQuizRouter = express.Router();
 const userQuizController = require('../controllers/userQuizController');
 const { authenticate } = require('../middleware/authMiddleware');
+const { checkAnySubscriptionAccess, attachSubscriptionInfo } = require('../middleware/userSubscriptionMiddleware');
+const Quiz = require('../models/quizModel');
 
 userQuizRouter.get('/', async (req, res) => {
   try {
@@ -31,7 +33,6 @@ userQuizRouter.get('/', async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    const Quiz = require('../models/quizModel');
     const quizzes = await Quiz.find(query)
       .populate('subject', 'name level')
       .select('-questions')
@@ -66,6 +67,9 @@ userQuizRouter.get('/', async (req, res) => {
   }
 });
 
+userQuizRouter.use(authenticate);
+
+// Get quizzes by subject (requires authentication)
 userQuizRouter.get('/subject/:subjectId', async (req, res) => {
   try {
     const { subjectId } = req.params;
@@ -81,7 +85,6 @@ userQuizRouter.get('/subject/:subjectId', async (req, res) => {
       return res.status(404).json({ message: 'Subject not found or inactive' });
     }
     
-    const Quiz = require('../models/quizModel');
     const quizzes = await Quiz.find({ subject: subjectId, isActive: true })
       .select('title description difficulty timeLimit createdAt')
       .sort({ createdAt: -1 });
@@ -101,16 +104,66 @@ userQuizRouter.get('/subject/:subjectId', async (req, res) => {
   }
 });
 
-userQuizRouter.use(authenticate);
+// Test endpoint to check authentication and quiz data
+userQuizRouter.get('/test/:quizId', async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    console.log('Test endpoint - User:', req.user);
+    console.log('Test endpoint - Quiz ID:', quizId);
+    
+    const quiz = await Quiz.findById(quizId).select('title questions');
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+    
+    // Test QuizAttempt model creation
+    const QuizAttempt = require('../models/quizAttemptModel');
+    const testAttempt = new QuizAttempt({
+      user: req.user.userId,
+      quiz: quizId,
+      score: 50,
+      passed: true,
+      timeSpent: 300,
+      answers: [{
+        question: quiz.questions[0]._id,
+        selectedOption: 0,
+        correctOption: 0,
+        isCorrect: true
+      }]
+    });
+    
+    console.log('Test attempt object created:', testAttempt);
+    
+    res.json({
+      message: 'Test successful',
+      user: req.user,
+      quiz: {
+        id: quiz._id,
+        title: quiz.title,
+        questionsCount: quiz.questions.length
+      },
+      testAttempt: {
+        userId: testAttempt.user,
+        quizId: testAttempt.quiz,
+        score: testAttempt.score,
+        passed: testAttempt.passed,
+        timeSpent: testAttempt.timeSpent,
+        answersCount: testAttempt.answers.length
+      }
+    });
+  } catch (error) {
+    console.error('Test endpoint error:', error);
+    res.status(500).json({ message: 'Test failed', error: error.message });
+  }
+});
 
-userQuizRouter.get('/:id/attempt', userQuizController.getQuizForAttempt);
-
-userQuizRouter.post('/submit', userQuizController.submitQuizAttempt);
-
+// Specific routes must come before parameterized routes
 userQuizRouter.get('/history', userQuizController.getUserQuizHistory);
-
+userQuizRouter.get('/stats', userQuizController.getUserStats);
 userQuizRouter.get('/attempt/:attemptId', userQuizController.getAttemptDetails);
 
-userQuizRouter.get('/stats', userQuizController.getUserStats);
+// Parameterized routes come last - add subscription info to request
+userQuizRouter.get('/:id/attempt', attachSubscriptionInfo, userQuizController.getQuizForAttempt);
+userQuizRouter.post('/:id/submit', attachSubscriptionInfo, userQuizController.submitQuizAttempt);
 
 module.exports = userQuizRouter;

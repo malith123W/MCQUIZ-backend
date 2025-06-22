@@ -7,7 +7,8 @@ const answerSchema = new mongoose.Schema({
   },
   selectedOption: {
     type: Number,
-    required: true
+    required: true,
+    default: -1
   },
   correctOption: {
     type: Number,
@@ -15,7 +16,8 @@ const answerSchema = new mongoose.Schema({
   },
   isCorrect: {
     type: Boolean,
-    required: true
+    required: true,
+    default: false
   }
 });
 
@@ -37,17 +39,23 @@ const quizAttemptSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
-      max: 100
+      max: 100,
+      default: 0
     },
     passed: {
       type: Boolean,
-      required: true
+      required: true,
+      default: false
     },
     timeSpent: {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0
     },
-    answers: [answerSchema]
+    answers: {
+      type: [answerSchema],
+      default: []
+    }
   },
   { timestamps: true }
 );

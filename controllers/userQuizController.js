@@ -107,11 +107,27 @@ const getQuizForAttempt = async (req, res) => {
     }
     
     const quiz = await Quiz.findOne({ _id: id, isActive: true })
-      .populate('subject', 'name level')
-      .select('-questions.correctAnswer -questions.explanation');
+      .populate('subject', 'name level');
     
     if (!quiz) {
       return res.status(404).json({ message: 'Quiz not found or inactive' });
+    }
+
+    // Check subscription access for Pro/OL/AL content
+    const subjectLevel = quiz.subject.level;
+    const requiresSubscription = ['Pro', 'OL', 'AL'].includes(subjectLevel);
+    
+    if (requiresSubscription) {
+      const userSubscriptions = req.userSubscriptions || [];
+      const hasAccess = userSubscriptions.some(level => ['Pro', 'OL', 'AL'].includes(level));
+      
+      if (!hasAccess) {
+        return res.status(403).json({ 
+          message: 'Access denied. This quiz requires a Pro/OL/AL subscription.',
+          requiredLevel: subjectLevel,
+          userSubscriptions: userSubscriptions
+        });
+      }
     }
     
     const previousAttempts = await QuizAttempt.find({
@@ -130,7 +146,8 @@ const getQuizForAttempt = async (req, res) => {
         questions: quiz.questions.map(q => ({
           _id: q._id,
           question: q.question,
-          options: q.options
+          options: q.options,
+          correctAnswer: q.correctAnswer
         })),
         passingScore: quiz.passingScore
       },
@@ -146,7 +163,15 @@ const getQuizForAttempt = async (req, res) => {
 
 const submitQuizAttempt = async (req, res) => {
   try {
-    const { quizId, answers, timeSpent } = req.body;
+    const { id: quizId } = req.params;
+    const { answers, timeSpent } = req.body;
+    
+    console.log('Submit quiz attempt - Request data:', {
+      quizId,
+      answersCount: answers?.length,
+      timeSpent,
+      userId: req.user?.userId
+    });
     
     if (!quizId || !answers || !Array.isArray(answers)) {
       return res.status(400).json({ message: 'Quiz ID and answers array are required' });
@@ -161,14 +186,24 @@ const submitQuizAttempt = async (req, res) => {
       return res.status(404).json({ message: 'Quiz not found' });
     }
     
+    console.log('Quiz found:', {
+      quizId: quiz._id,
+      title: quiz.title,
+      questionsCount: quiz.questions.length,
+      passingScore: quiz.passingScore
+    });
+    
     let correctAnswers = 0;
     const questionResults = [];
     
-    answers.forEach(answer => {
+    answers.forEach((answer, index) => {
       const question = quiz.questions.id(answer.questionId);
-      if (!question) return;
+      if (!question) {
+        console.log(`Question not found for ID: ${answer.questionId}`);
+        return;
+      }
       
-      const isCorrect = question.correctAnswer === answer.selectedOption;
+      const isCorrect = answer.selectedOption !== -1 && question.correctAnswer === answer.selectedOption;
       if (isCorrect) correctAnswers++;
       
       questionResults.push({
@@ -183,6 +218,32 @@ const submitQuizAttempt = async (req, res) => {
     const score = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
     const passed = score >= quiz.passingScore;
     
+    console.log('Quiz results calculated:', {
+      correctAnswers,
+      totalQuestions,
+      score,
+      passed,
+      questionResultsCount: questionResults.length
+    });
+    
+    // Test database connection and model validation
+    try {
+      const testAttempt = new QuizAttempt({
+        user: req.user.userId,
+        quiz: quizId,
+        score: 0,
+        passed: false,
+        timeSpent: 0,
+        answers: []
+      });
+      
+      console.log('Test attempt object created successfully');
+      console.log('Test attempt validation:', testAttempt.validateSync());
+    } catch (validationError) {
+      console.error('Validation error:', validationError);
+      return res.status(400).json({ message: 'Validation error', error: validationError.message });
+    }
+    
     const attempt = new QuizAttempt({
       user: req.user.userId,
       quiz: quizId,
@@ -192,9 +253,19 @@ const submitQuizAttempt = async (req, res) => {
       answers: questionResults
     });
     
-    await attempt.save();
+    console.log('Attempt object created:', {
+      userId: attempt.user,
+      quizId: attempt.quiz,
+      score: attempt.score,
+      passed: attempt.passed,
+      timeSpent: attempt.timeSpent,
+      answersCount: attempt.answers.length
+    });
     
-    res.status(200).json({
+    await attempt.save();
+    console.log('Attempt saved successfully with ID:', attempt._id);
+    
+    const response = {
       attemptId: attempt._id,
       score,
       correctAnswers,
@@ -208,9 +279,13 @@ const submitQuizAttempt = async (req, res) => {
         isCorrect: result.isCorrect,
         explanation: quiz.questions.id(result.question)?.explanation || ''
       }))
-    });
+    };
+    
+    console.log('Sending response:', response);
+    res.status(200).json(response);
   } catch (error) {
     console.error('Submit quiz attempt error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
