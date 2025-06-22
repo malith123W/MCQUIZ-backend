@@ -7,13 +7,16 @@ const session = require('express-session');
 const User = require('./models/model');
 const router = require('./routes/router');
 const adminRouter = require('./routes/adminRouter');
+const paymentRouter = require('./routes/paymentRouter');
+const subjectRouter = require('./routes/subjectRoutes');
+const userSubjectRouter = require('./routes/userSubjectRoutes');
+const userQuizRouter = require('./routes/userQuizRoutes');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3001;
 const host = process.env.HOST || 'localhost';
 
-// Middleware
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -40,7 +43,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// MongoDB Connection
 const uri = process.env.MONGODB_URI;
 const connect = async () => {
   try {
@@ -134,8 +136,13 @@ app.get('/auth/user', (req, res) => {
   res.json(req.user || null);
 });
 
+// Routes
 app.use('/api', router);
 app.use('/api/admin', adminRouter);
+app.use('/api/admin/subjects', subjectRouter);
+app.use('/api/subjects', userSubjectRouter);
+app.use('/api/payment', paymentRouter);
+app.use('/api/quizzes', userQuizRouter);
 
 app.use((req, res, next) => {
   res.status(404).json({ message: 'Route not found' });
