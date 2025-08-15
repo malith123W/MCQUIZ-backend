@@ -8,7 +8,7 @@ const createQuiz = async (req, res) => {
   session.startTransaction();
   
   try {
-    const { title, description, subject, timeLimit, questions, difficulty, passingScore } = req.body;
+    const { title, description, subject, timeLimit, questions, difficulty, passingScore, subscriptionLevel } = req.body;
     
     if (!title || !subject || !questions || !Array.isArray(questions) || questions.length === 0) {
       return res.status(400).json({ 
@@ -43,6 +43,7 @@ const createQuiz = async (req, res) => {
       questions,
       difficulty: difficulty || 'Medium',
       passingScore: passingScore !== undefined ? passingScore : 60,
+      subscriptionLevel: subscriptionLevel || 'Basic',
       createdBy: req.user.userId
     });
     
@@ -76,7 +77,7 @@ const createQuiz = async (req, res) => {
 
 const getAllQuizzes = async (req, res) => {
   try {
-    const { subject, search, difficulty, active, sort, page = 1, limit = 10 } = req.query;
+    const { subject, search, difficulty, active, subscriptionLevel, sort, page = 1, limit = 10 } = req.query;
     
     const query = {};
     
@@ -90,6 +91,10 @@ const getAllQuizzes = async (req, res) => {
     
     if (active !== undefined) {
       query.isActive = active === 'true';
+    }
+    
+    if (subscriptionLevel) {
+      query.subscriptionLevel = subscriptionLevel;
     }
     
     if (search) {
@@ -122,6 +127,7 @@ const getAllQuizzes = async (req, res) => {
       questionsCount: quiz.questions ? quiz.questions.length : 0,
       timeLimit: quiz.timeLimit,
       difficulty: quiz.difficulty,
+      subscriptionLevel: quiz.subscriptionLevel,
       isActive: quiz.isActive,
       createdAt: quiz.createdAt
     }));
@@ -155,7 +161,7 @@ const getQuizzesBySubject = async (req, res) => {
     }
     
     const quizzes = await Quiz.find({ subject: subjectId })
-      .select('title description difficulty timeLimit isActive createdAt')
+      .select('title description difficulty timeLimit isActive createdAt subscriptionLevel')
       .sort({ createdAt: -1 });
     
     res.status(200).json({ 
@@ -206,7 +212,7 @@ const updateQuiz = async (req, res) => {
       return res.status(400).json({ message: 'Invalid quiz ID format' });
     }
     
-    const { title, description, subject, timeLimit, questions, difficulty, passingScore, isActive } = req.body;
+    const { title, description, subject, timeLimit, questions, difficulty, passingScore, isActive, subscriptionLevel } = req.body;
     
     const quiz = await Quiz.findById(id);
     
@@ -235,6 +241,7 @@ const updateQuiz = async (req, res) => {
     if (difficulty) quiz.difficulty = difficulty;
     if (passingScore !== undefined) quiz.passingScore = parseInt(passingScore);
     if (isActive !== undefined) quiz.isActive = isActive;
+    if (subscriptionLevel) quiz.subscriptionLevel = subscriptionLevel;
     
     if (questions && Array.isArray(questions)) {
       for (let i = 0; i < questions.length; i++) {
@@ -342,6 +349,18 @@ const getQuizStats = async (req, res) => {
       }
     ]);
     
+    const subscriptionLevelStats = await Quiz.aggregate([
+      {
+        $group: {
+          _id: '$subscriptionLevel',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ]);
+    
     const subjectStats = await Quiz.aggregate([
       {
         $group: {
@@ -373,6 +392,10 @@ const getQuizStats = async (req, res) => {
       totalQuizzes,
       byDifficulty: difficultyStats.map(stat => ({
         difficulty: stat._id,
+        count: stat.count
+      })),
+      bySubscriptionLevel: subscriptionLevelStats.map(stat => ({
+        subscriptionLevel: stat._id,
         count: stat.count
       })),
       bySubject: formattedSubjectStats
