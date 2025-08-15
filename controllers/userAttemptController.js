@@ -44,8 +44,9 @@ const saveQuizAttempt = async (req, res) => {
 
       // For saving to database
       processedAnswers.push({
-        questionId: new mongoose.Types.ObjectId(), // Generate unique ID for this question attempt
-        selectedAnswer: userAnswer,
+        question: new mongoose.Types.ObjectId(), // Generate unique ID for this question attempt
+        selectedOption: userAnswer,
+        correctOption: question.correctAnswer,
         isCorrect: isCorrect
       });
 
@@ -70,16 +71,9 @@ const saveQuizAttempt = async (req, res) => {
       user: userId,
       quiz: quizId,
       answers: processedAnswers,
-      score: {
-        correct: correctAnswers,
-        total: totalQuestions,
-        percentage: scorePercentage
-      },
+      score: scorePercentage,
       passed: passed,
-      timeSpent: timeSpent || 0,
-      startedAt: startedAt ? new Date(startedAt) : new Date(),
-      submittedAt: new Date(),
-      ipAddress: req.ip || req.connection.remoteAddress
+      timeSpent: timeSpent || 0
     };
 
     const attempt = new Attempt(attemptData);
@@ -99,7 +93,7 @@ const saveQuizAttempt = async (req, res) => {
         passingScore: quiz.passingScore,
         passed: passed,
         timeSpent: timeSpent || 0,
-        submittedAt: attempt.submittedAt,
+        submittedAt: attempt.createdAt,
         detailedResults: detailedResults
       }
     });
@@ -113,7 +107,12 @@ const saveQuizAttempt = async (req, res) => {
 // Get user's quiz history
 const getUserQuizHistory = async (req, res) => {
   try {
+    console.log('getUserQuizHistory - Request user:', req.user);
+    console.log('getUserQuizHistory - Request query:', req.query);
+    
     const userId = req.user.userId;
+    console.log('getUserQuizHistory - User ID:', userId);
+    
     const { page = 1, limit = 10, quizId, passed } = req.query;
 
     // Build query
@@ -138,7 +137,7 @@ const getUserQuizHistory = async (req, res) => {
           select: 'name level'
         }
       })
-      .sort({ submittedAt: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
@@ -154,11 +153,14 @@ const getUserQuizHistory = async (req, res) => {
         passingScore: attempt.quiz.passingScore,
         subject: attempt.quiz.subject
       },
-      score: attempt.score,
+      score: {
+        percentage: attempt.score || 0,
+        correct: attempt.answers ? attempt.answers.filter(a => a.isCorrect).length : 0,
+        total: attempt.answers ? attempt.answers.length : 0
+      },
       passed: attempt.passed,
-      timeSpent: attempt.timeSpent,
-      submittedAt: attempt.submittedAt,
-      duration: attempt.duration
+      timeSpent: attempt.timeSpent || 0,
+      submittedAt: attempt.createdAt
     }));
 
     res.status(200).json({
@@ -192,15 +194,18 @@ const getUserQuizAttempts = async (req, res) => {
       quiz: quizId 
     })
     .populate('quiz', 'title description difficulty passingScore')
-    .sort({ submittedAt: -1 });
+    .sort({ createdAt: -1 });
 
     const formattedAttempts = attempts.map(attempt => ({
       id: attempt._id,
-      score: attempt.score,
+      score: {
+        percentage: attempt.score || 0,
+        correct: attempt.answers ? attempt.answers.filter(a => a.isCorrect).length : 0,
+        total: attempt.answers ? attempt.answers.length : 0
+      },
       passed: attempt.passed,
-      timeSpent: attempt.timeSpent,
-      submittedAt: attempt.submittedAt,
-      duration: attempt.duration
+      timeSpent: attempt.timeSpent || 0,
+      submittedAt: attempt.createdAt
     }));
 
     // Get quiz info
@@ -220,7 +225,7 @@ const getUserQuizAttempts = async (req, res) => {
       attempts: formattedAttempts,
       attemptCount: attempts.length,
       hasAttempted: attempts.length > 0,
-      bestScore: attempts.length > 0 ? Math.max(...attempts.map(a => a.score.percentage)) : 0
+      bestScore: attempts.length > 0 ? Math.max(...attempts.map(a => a.score || 0)) : 0
     });
 
   } catch (error) {
@@ -263,7 +268,7 @@ const getAttemptDetails = async (req, res) => {
         questionIndex: index,
         question: question.question,
         options: question.options,
-        userAnswer: userAnswer ? userAnswer.selectedAnswer : null,
+        userAnswer: userAnswer ? userAnswer.selectedOption : null,
         correctAnswer: question.correctAnswer,
         isCorrect: userAnswer ? userAnswer.isCorrect : false,
         explanation: question.explanation || null
@@ -284,8 +289,7 @@ const getAttemptDetails = async (req, res) => {
         score: attempt.score,
         passed: attempt.passed,
         timeSpent: attempt.timeSpent,
-        submittedAt: attempt.submittedAt,
-        duration: attempt.duration,
+        submittedAt: attempt.createdAt,
         detailedResults: detailedResults
       }
     });
@@ -310,9 +314,9 @@ const getUserQuizStats = async (req, res) => {
       {
         $group: {
           _id: null,
-          avgScore: { $avg: '$score.percentage' },
-          highestScore: { $max: '$score.percentage' },
-          lowestScore: { $min: '$score.percentage' }
+          avgScore: { $avg: '$score' },
+          highestScore: { $max: '$score' },
+          lowestScore: { $min: '$score' }
         }
       }
     ]);
@@ -334,7 +338,7 @@ const getUserQuizStats = async (req, res) => {
           _id: '$quizData.difficulty',
           count: { $sum: 1 },
           passed: { $sum: { $cond: ['$passed', 1, 0] } },
-          avgScore: { $avg: '$score.percentage' }
+          avgScore: { $avg: '$score' }
         }
       }
     ]);
@@ -387,8 +391,8 @@ const checkQuizAttempted = async (req, res) => {
       user: userId, 
       quiz: quizId 
     })
-    .sort({ submittedAt: -1 })
-    .select('score passed submittedAt timeSpent');
+    .sort({ createdAt: -1 })
+    .select('score passed createdAt timeSpent');
 
     res.status(200).json({
       hasAttempted: attemptCount > 0,
@@ -396,7 +400,7 @@ const checkQuizAttempted = async (req, res) => {
       lastAttempt: lastAttempt ? {
         score: lastAttempt.score,
         passed: lastAttempt.passed,
-        submittedAt: lastAttempt.submittedAt,
+        submittedAt: lastAttempt.createdAt,
         timeSpent: lastAttempt.timeSpent
       } : null
     });
