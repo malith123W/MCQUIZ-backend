@@ -10,7 +10,7 @@ const subscriptionSchema = new mongoose.Schema(
     planType: { 
       type: String, 
       required: true,
-      enum: ['Basic', 'Schol Pro', 'O/L Pro', 'A/L Pro'] 
+      enum: ['Basic','School Pro','O/L Pro', 'A/L Pro'] 
     },
     startDate: { 
       type: Date, 
