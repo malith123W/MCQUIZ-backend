@@ -8,9 +8,9 @@ const createSubject = async (req, res) => {
       return res.status(400).json({ message: 'Subject name and level are required' });
     }
     
-    const validLevels = ['School Pro', 'O/L Pro', 'A/L'];
+    const validLevels = ['School', 'O/L', 'A/L'];
     if (!validLevels.includes(level)) {
-      return res.status(400).json({ message: 'Invalid level. Must be School Pro, O/L Pro, or A/L' });
+      return res.status(400).json({ message: 'Invalid level. Must be School, O/L, or A/L' });
     }
     
     const existingSubject = await Subject.findOne({ name, level });
@@ -87,9 +87,9 @@ const getSubjectsByLevel = async (req, res) => {
   try {
     const { level } = req.params;
     
-    const validLevels = ['School Pro', 'O/L Pro', 'A/L'];
+    const validLevels = ['School', 'O/L', 'A/L'];
     if (!validLevels.includes(level)) {
-      return res.status(400).json({ message: 'Invalid level. Must be School Pro, O/L Pro, or A/L' });
+      return res.status(400).json({ message: 'Invalid level. Must be School, O/L, or A/L' });
     }
     
     const subjects = await Subject.find({ level }).sort({ name: 1 });

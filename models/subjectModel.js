@@ -10,7 +10,7 @@ const subjectSchema = new mongoose.Schema(
     level: { 
       type: String, 
       required: true,
-      enum: ['School Pro', 'O/L Pro', 'A/L'],
+      enum: ['School', 'O/L', 'A/L'],
       index: true
     },
     quizCount: {
