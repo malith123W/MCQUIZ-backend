@@ -13,6 +13,7 @@ const userSubjectRouter = require('./routes/userSubjectRoutes');
 const userQuizRouter = require('./routes/userQuizRoutes');
 const userAttemptRouter = require('./routes/userAttemptRoutes');
 const userDashboardRouter = require('./routes/userDashboardRoutes');
+const passwordResetRouter = require('./routes/passwordResetRoutes');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
@@ -161,6 +162,7 @@ app.use('/api/payment', paymentRouter);
 app.use('/api/user-quizzes', userQuizRouter);
 app.use('/api/user-attempts', userAttemptRouter);
 app.use('/api', userDashboardRouter);
+app.use('/api/password-reset', passwordResetRouter);
 
 // Test endpoint to check database
 app.get('/api/test/database', async (req, res) => {
