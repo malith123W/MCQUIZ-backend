@@ -14,6 +14,7 @@ const userQuizRouter = require('./routes/userQuizRoutes');
 const userAttemptRouter = require('./routes/userAttemptRoutes');
 const userDashboardRouter = require('./routes/userDashboardRoutes');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -114,6 +115,12 @@ passport.deserializeUser(async (id, done) => {
 
 app.get(
   '/auth/google',
+  (req, res, next) => {
+    try {
+      req.session.oauthFrom = req.query.from || '/';
+    } catch (_) {}
+    next();
+  },
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
@@ -121,7 +128,14 @@ app.get(
   '/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    res.redirect(FRONTEND_URL);
+    const token = jwt.sign(
+      { userId: req.user._id, email: req.user.email, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+    const from = (req.session && req.session.oauthFrom) || '/';
+    if (req.session) req.session.oauthFrom = undefined;
+    res.redirect(`${FRONTEND_URL}/oauth/callback?token=${encodeURIComponent(token)}&from=${encodeURIComponent(from)}`);
   }
 );
 
