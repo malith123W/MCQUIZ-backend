@@ -27,18 +27,18 @@ jobs:
       - name: Delete old container
         run: docker rm -f mcquizbackend-container || true
       - name: Run Docker Container
-        run: docker run -d -p 3001:3001 --name mcquizbackend-container \
-          -e MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} ashank2001/mcquizbackend
-                -e PORT=${{ secrets.PORT }} \
-          -e HOST=${{ secrets.HOST }} \
-          -e FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
-          -e MONGODB_URI=${{ secrets.MONGODB_URI }} \
-          -e CLIENT_ID=${{ secrets.CLIENT_ID }} \
-          -e CLIENT_SECRET=${{ secrets.CLIENT_SECRET }} \
-          -e PAYHERE_MERCHANT_ID=${{ secrets.PAYHERE_MERCHANT_ID }} \
-          -e PAYHERE_MERCHANT_SECRET=${{ secrets.PAYHERE_MERCHANT_SECRET }} \
-          -e ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }} \
-          -e ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }} \
-          -e EMAIL_USER=${{ secrets.EMAIL_USER }} \
-          -e EMAIL_PASS=${{ secrets.EMAIL_PASS }} \
-          ashank2001/mcquizbackend:latest
+        run: |
+          docker run -d -p 3001:3001 --name mcquizbackend-container \
+            -e PORT=${{ secrets.PORT }} \
+            -e HOST=${{ secrets.HOST }} \
+            -e FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
+            -e MONGODB_URI=${{ secrets.MONGODB_URI }} \
+            -e CLIENT_ID=${{ secrets.CLIENT_ID }} \
+            -e CLIENT_SECRET=${{ secrets.CLIENT_SECRET }} \
+            -e PAYHERE_MERCHANT_ID=${{ secrets.PAYHERE_MERCHANT_ID }} \
+            -e PAYHERE_MERCHANT_SECRET=${{ secrets.PAYHERE_MERCHANT_SECRET }} \
+            -e ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }} \
+            -e ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }} \
+            -e EMAIL_USER=${{ secrets.EMAIL_USER }} \
+            -e EMAIL_PASS=${{ secrets.EMAIL_PASS }} \
+            ashank2001/mcquizbackend:latest 
