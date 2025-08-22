@@ -18,12 +18,12 @@ require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
 const app = express();
-const port = process.env.PORT || 3001;
-const host = process.env.HOST || 'localhost';
+const port = process.env.PORT ;
+const host = process.env.HOST ;
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   })
 );
