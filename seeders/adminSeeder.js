@@ -9,9 +9,7 @@ const verifyEnvVariables = () => {
   const requiredVars = [
     'MONGODB_URI',
     'ADMIN_EMAIL_1',
-    'ADMIN_PASSWORD_1',
-    'ADMIN_EMAIL_2',
-    'ADMIN_PASSWORD_2'
+    'ADMIN_PASSWORD_1'
   ];
 
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
@@ -34,10 +32,6 @@ const createAdmins = async () => {
       {
         email: process.env.ADMIN_EMAIL_1,
         password: process.env.ADMIN_PASSWORD_1
-      },
-      {
-        email: process.env.ADMIN_EMAIL_2,
-        password: process.env.ADMIN_PASSWORD_2
       }
     ];
 
