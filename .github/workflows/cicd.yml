@@ -31,19 +31,23 @@ jobs:
       - name: Delete old container
         run: docker rm -f mcquizbackend-container || true
 
+      - name: Create .env file
+        run: |
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          echo "HOST=${{ secrets.HOST }}" >> .env
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
+          echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> .env
+          echo "CLIENT_ID=${{ secrets.CLIENT_ID }}" >> .env
+          echo "CLIENT_SECRET=${{ secrets.CLIENT_SECRET }}" >> .env
+          echo "PAYHERE_MERCHANT_ID=${{ secrets.PAYHERE_MERCHANT_ID }}" >> .env
+          echo "PAYHERE_MERCHANT_SECRET=${{ secrets.PAYHERE_MERCHANT_SECRET }}" >> .env
+          echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> .env
+          echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
+          echo "EMAIL_USER=${{ secrets.EMAIL_USER }}" >> .env
+          echo "EMAIL_PASS=${{ secrets.EMAIL_PASS }}" >> .env
+
       - name: Run Docker Container
         run: |
           docker run -d -p 3001:3001 --name mcquizbackend-container \
-          -e PORT=${{ secrets.PORT }} \
-          -e HOST=${{ secrets.HOST }} \
-          -e FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
-          -e MONGODB_URI=${{ secrets.MONGODB_URI }} \
-          -e CLIENT_ID=${{ secrets.CLIENT_ID }} \
-          -e CLIENT_SECRET=${{ secrets.CLIENT_SECRET }} \
-          -e PAYHERE_MERCHANT_ID=${{ secrets.PAYHERE_MERCHANT_ID }} \
-          -e PAYHERE_MERCHANT_SECRET=${{ secrets.PAYHERE_MERCHANT_SECRET }} \
-          -e ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }} \
-          -e ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }} \
-          -e EMAIL_USER=${{ secrets.EMAIL_USER }} \
-          -e EMAIL_PASS=${{ secrets.EMAIL_PASS }} \
-          ashank2001/mcquizbackend:latest
+            --env-file .env \
+            ashank2001/mcquizbackend:latest
