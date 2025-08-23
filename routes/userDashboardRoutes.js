@@ -182,6 +182,7 @@ userDashboardRouter.get('/user/recent-quizzes', authenticate, async (req, res) =
       quizTitle: attempt.quiz.title,
       subjectName: attempt.quiz.subject.name,
       difficulty: attempt.quiz.difficulty,
+      subscriptionLevel: attempt.quiz.subscriptionLevel,
       score: attempt.score,
       passed: attempt.passed,
       attemptDate: attempt.createdAt,

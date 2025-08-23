@@ -46,6 +46,7 @@ const getAvailableQuizzes = async (req, res) => {
       description: quiz.description,
       subject: quiz.subject,
       questionsCount: quiz.questions ? quiz.questions.length : 0,
+      subscriptionLevel: quiz.subscriptionLevel,
       timeLimit: quiz.timeLimit,
       difficulty: quiz.difficulty,
       createdAt: quiz.createdAt
@@ -80,7 +81,7 @@ const getQuizzesBySubject = async (req, res) => {
     }
     
     const quizzes = await Quiz.find({ subject: subjectId, isActive: true })
-      .select('title description difficulty timeLimit createdAt')
+      .select('title description difficulty timeLimit createdAt subscriptionLevel')
       .sort({ createdAt: -1 });
     
     res.status(200).json({ 
@@ -143,6 +144,7 @@ const getQuizForAttempt = async (req, res) => {
         subject: quiz.subject,
         timeLimit: quiz.timeLimit,
         difficulty: quiz.difficulty,
+        subscriptionLevel: quiz.subscriptionLevel,
         questions: quiz.questions.map(q => ({
           _id: q._id,
           question: q.question,
@@ -299,7 +301,7 @@ const getUserQuizHistory = async (req, res) => {
     const attempts = await QuizAttempt.find({ user: req.user.userId })
       .populate({
         path: 'quiz',
-        select: 'title subject difficulty',
+        select: 'title subject difficulty subscriptionLevel',
         populate: {
           path: 'subject',
           select: 'name level'
@@ -339,7 +341,7 @@ const getAttemptDetails = async (req, res) => {
         path: 'quiz',
         populate: {
           path: 'subject',
-          select: 'name level'
+          select: 'name level subscriptionLevel'
         }
       });
     
@@ -371,7 +373,8 @@ const getAttemptDetails = async (req, res) => {
         quiz: {
           _id: attempt.quiz._id,
           title: attempt.quiz.title,
-          subject: attempt.quiz.subject
+          subject: attempt.quiz.subject,
+          subscriptionLevel: attempt.quiz.subscriptionLevel
         },
         score: attempt.score,
         passed: attempt.passed,
@@ -410,7 +413,7 @@ const getUserStats = async (req, res) => {
       .limit(5)
       .populate({
         path: 'quiz',
-        select: 'title'
+        select: 'title subscriptionLevel'
       });
     
     const subjectPerformance = await QuizAttempt.aggregate([
@@ -451,6 +454,7 @@ const getUserStats = async (req, res) => {
       recentAttempts: recentAttempts.map(attempt => ({
         _id: attempt._id,
         quizTitle: attempt.quiz.title,
+        subscriptionLevel: attempt.quiz.subscriptionLevel,
         score: attempt.score,
         passed: attempt.passed,
         date: attempt.createdAt
