@@ -21,7 +21,7 @@ const createQuiz = async (req, res) => {
       return res.status(404).json({ message: 'Subject not found' });
     }
     
-    if (!['School Pro', 'O/L Pro', 'A/L'].includes(subjectExists.level)) {
+    if (!['Scholarship', 'O/L', 'A/L'].includes(subjectExists.level)) {
       return res.status(400).json({ message: 'Subject has an invalid level' });
     }
     

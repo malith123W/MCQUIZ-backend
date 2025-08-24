@@ -1,70 +1,50 @@
-# Email Setup for Password Reset
+# Email Setup for Password Reset Functionality
 
-To enable the "Forgot Password" feature, you need to configure email credentials in your `.env` file.
+## Overview
+The password reset functionality requires email configuration to send OTP codes to users. This document explains how to set up the email service.
 
 ## Required Environment Variables
-
-Add these to your `.env` file:
+Create a `.env` file in the backend root directory with the following variables:
 
 ```env
-# Email Configuration
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-specific-password
 ```
 
-## Gmail Setup (Recommended)
+## Gmail Setup Instructions
 
-1. **Enable 2-Factor Authentication** on your Gmail account
-2. **Generate App Password**:
-   - Go to Google Account settings
-   - Security → 2-Step Verification → App passwords
-   - Generate a new app password for "Mail"
-   - Use this password as `EMAIL_PASS`
+### 1. Enable 2-Factor Authentication
+- Go to your Google Account settings
+- Navigate to Security
+- Enable 2-Step Verification
 
-## Other Email Services
+### 2. Generate App-Specific Password
+- Go to Google Account settings
+- Navigate to Security > 2-Step Verification
+- Click on "App passwords"
+- Generate a new app password for "Mail"
+- Use this generated password in your `.env` file
 
-You can modify the `createTransporter()` function in `controllers/passwordResetController.js` to use other email services:
+### 3. Important Notes
+- **NEVER use your regular Gmail password**
+- **ALWAYS use an app-specific password**
+- The app-specific password is 16 characters long
+- Keep your `.env` file secure and never commit it to version control
 
-### Outlook/Hotmail
-```javascript
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: 'outlook',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-};
-```
-
-### Custom SMTP
-```javascript
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: 'your-smtp-host.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-};
-```
+## Alternative Email Services
+You can modify the `createTransporter()` function in `controllers/passwordResetController.js` to use other email services like:
+- Outlook/Hotmail
+- Yahoo
+- Custom SMTP servers
 
 ## Testing
+To test the email functionality:
+1. Start your backend server
+2. Try the password reset flow from the frontend
+3. Check your email for the OTP code
+4. Verify the password reset works correctly
 
-1. Start the backend server
-2. Click "Forgot Password" on the login page
-3. Enter a valid email address
-4. Check your email for the OTP
-5. Complete the password reset process
-
-## Security Notes
-
-- OTPs expire after 10 minutes
-- OTPs are automatically deleted from the database after expiration
-- Failed OTP attempts are tracked
-- Passwords are securely hashed using bcrypt
-- All OTPs are cleared after successful password reset 
+## Troubleshooting
+- **"Invalid login" error**: Check your email and app-specific password
+- **"Authentication failed"**: Ensure 2FA is enabled and app password is correct
+- **"Connection timeout"**: Check your internet connection and firewall settings 
