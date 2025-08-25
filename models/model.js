@@ -9,7 +9,15 @@ const userSchema = new mongoose.Schema(
       lastName: { type: String, required: false }, // Required only for manual sign-up
       email: { type: String, required: true, unique: true }, // Shared for both user types
       password: { type: String, required: false }, // Optional for Google users
+      phone: { type: String, required: false },
+      dateOfBirth: { type: Date, required: false },
+      gender: { type: String, enum: ['male', 'female', 'other'], required: false },
+      address: { type: String, required: false },
+      city: { type: String, required: false },
+      country: { type: String, required: false },
+      profilePicture: { type: String, required: false },
       role: { type: String, enum: ['user', 'admin'], default: 'user' }, // User role
+      subscriptionLevel: { type: String, enum: ['Basic', 'School Pro', 'O/L Pro', 'A/L'], default: 'Basic' }, // Subscription level
     },
     { timestamps: true }
   );

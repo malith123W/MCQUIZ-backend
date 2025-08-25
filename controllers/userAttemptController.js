@@ -131,7 +131,7 @@ const getUserQuizHistory = async (req, res) => {
     const attempts = await Attempt.find(query)
       .populate({
         path: 'quiz',
-        select: 'title description difficulty passingScore subject',
+        select: 'title description difficulty passingScore subject subscriptionLevel',
         populate: {
           path: 'subject',
           select: 'name level'
@@ -151,7 +151,8 @@ const getUserQuizHistory = async (req, res) => {
         description: attempt.quiz.description,
         difficulty: attempt.quiz.difficulty,
         passingScore: attempt.quiz.passingScore,
-        subject: attempt.quiz.subject
+        subject: attempt.quiz.subject,
+        subscriptionLevel: attempt.quiz.subscriptionLevel
       },
       score: {
         percentage: attempt.score || 0,
@@ -193,7 +194,7 @@ const getUserQuizAttempts = async (req, res) => {
       user: userId, 
       quiz: quizId 
     })
-    .populate('quiz', 'title description difficulty passingScore')
+    .populate('quiz', 'title description difficulty passingScore subject subscriptionLevel')
     .sort({ createdAt: -1 });
 
     const formattedAttempts = attempts.map(attempt => ({
@@ -211,7 +212,7 @@ const getUserQuizAttempts = async (req, res) => {
     // Get quiz info
     const quiz = await Quiz.findById(quizId)
       .populate('subject', 'name level')
-      .select('title description difficulty passingScore subject');
+      .select('title description difficulty passingScore subject subscriptionLevel');
 
     res.status(200).json({
       quiz: {
@@ -220,7 +221,8 @@ const getUserQuizAttempts = async (req, res) => {
         description: quiz.description,
         difficulty: quiz.difficulty,
         passingScore: quiz.passingScore,
-        subject: quiz.subject
+        subject: quiz.subject,
+        subscriptionLevel: quiz.subscriptionLevel
       },
       attempts: formattedAttempts,
       attemptCount: attempts.length,
@@ -250,7 +252,7 @@ const getAttemptDetails = async (req, res) => {
     })
     .populate({
       path: 'quiz',
-      select: 'title description questions difficulty passingScore subject',
+      select: 'title description questions difficulty passingScore subject subscriptionLevel',
       populate: {
         path: 'subject',
         select: 'name level'
@@ -284,7 +286,8 @@ const getAttemptDetails = async (req, res) => {
           description: attempt.quiz.description,
           difficulty: attempt.quiz.difficulty,
           passingScore: attempt.quiz.passingScore,
-          subject: attempt.quiz.subject
+          subject: attempt.quiz.subject,
+          subscriptionLevel: attempt.quiz.subscriptionLevel
         },
         score: attempt.score,
         passed: attempt.passed,

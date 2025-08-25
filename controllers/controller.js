@@ -16,7 +16,8 @@ const registerUser = async (req, res) => {
       lastName,
       email,
       password,
-      role: 'user'
+      role: 'user',
+      subscriptionLevel: 'Basic'
     });
 
     await newUser.save();
@@ -59,7 +60,8 @@ const loginUser = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        role: user.role
+        role: user.role,
+        subscriptionLevel: user.subscriptionLevel
       }
     });
   } catch (error) {

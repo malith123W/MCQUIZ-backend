@@ -49,8 +49,11 @@ userQuizRouter.get('/', async (req, res) => {
       subject: quiz.subject,
       timeLimit: quiz.timeLimit,
       difficulty: quiz.difficulty,
-      createdAt: quiz.createdAt
+      createdAt: quiz.createdAt,
+      subscriptionLevel: quiz.subscriptionLevel
     }));
+
+    console.log("transformedQuizzes : ",transformedQuizzes);
     
     res.status(200).json({
       quizzes: transformedQuizzes,
@@ -86,7 +89,7 @@ userQuizRouter.get('/subject/:subjectId', async (req, res) => {
     }
     
     const quizzes = await Quiz.find({ subject: subjectId, isActive: true })
-      .select('title description difficulty timeLimit createdAt')
+      .select('title description difficulty timeLimit createdAt subscriptionLevel')
       .sort({ createdAt: -1 });
     
     res.status(200).json({ 

@@ -54,9 +54,9 @@ userSubjectRouter.get('/level/:level', async (req, res) => {
   try {
     const { level } = req.params;
     
-    const validLevels = ['School', 'O/L', 'A/L'];
+    const validLevels = ['Scholarship', 'O/L', 'A/L'];
     if (!validLevels.includes(level)) {
-      return res.status(400).json({ message: 'Invalid level. Must be School, O/L, or A/L' });
+      return res.status(400).json({ message: 'Invalid level. Must be Scholarship, O/L, or A/L' });
     }
     
     const Subject = require('../models/subjectModel');

@@ -21,7 +21,7 @@ const createQuiz = async (req, res) => {
       return res.status(404).json({ message: 'Subject not found' });
     }
     
-    if (!['School', 'O/L', 'A/L'].includes(subjectExists.level)) {
+    if (!['Scholarship', 'O/L', 'A/L'].includes(subjectExists.level)) {
       return res.status(400).json({ message: 'Subject has an invalid level' });
     }
     
@@ -64,7 +64,8 @@ const createQuiz = async (req, res) => {
         _id: quiz._id,
         title: quiz.title,
         subject: quiz.subject,
-        questionsCount: quiz.questions.length
+        questionsCount: quiz.questions.length,
+        subscriptionLevel: quiz.subscriptionLevel
       }
     });
   } catch (error) {
@@ -161,7 +162,7 @@ const getQuizzesBySubject = async (req, res) => {
     }
     
     const quizzes = await Quiz.find({ subject: subjectId })
-      .select('title description difficulty timeLimit isActive createdAt subscriptionLevel')
+      .select('title description difficulty subscriptionLevel timeLimit isActive createdAt')
       .sort({ createdAt: -1 });
     
     res.status(200).json({ 
@@ -241,7 +242,7 @@ const updateQuiz = async (req, res) => {
     if (difficulty) quiz.difficulty = difficulty;
     if (passingScore !== undefined) quiz.passingScore = parseInt(passingScore);
     if (isActive !== undefined) quiz.isActive = isActive;
-    if (subscriptionLevel) quiz.subscriptionLevel = subscriptionLevel;
+    if (subscriptionLevel !== undefined) quiz.subscriptionLevel = subscriptionLevel;
     
     if (questions && Array.isArray(questions)) {
       for (let i = 0; i < questions.length; i++) {
@@ -283,6 +284,7 @@ const updateQuiz = async (req, res) => {
         title: quiz.title,
         subject: quiz.subject,
         questionsCount: quiz.questions.length,
+        subscriptionLevel: quiz.subscriptionLevel,
         isActive: quiz.isActive
       }
     });
