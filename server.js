@@ -400,8 +400,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-const server = app.listen(port, host, () => {
-  console.log(`Node server is listening on http://${host}:${server.address().port}`);
+const server = app.listen(port, () => {
+  console.log(`Node server is listening on port ${server.address().port}`);
 });
 
 module.exports = app;
